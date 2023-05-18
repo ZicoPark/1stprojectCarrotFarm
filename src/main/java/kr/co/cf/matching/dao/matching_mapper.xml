@@ -1,0 +1,554 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.cf.matching.dao.MatchingDAO">
+
+	<select id="userData" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT locationIdx FROM userdata WHERE userId=#{param1}
+	</select>
+	
+ 	<select id="matchingDetail" resultType="kr.co.cf.matching.dto.MatchingDTO">
+ 		SELECT
+ 			m.matchigState,
+ 			m.matchingIdx,
+ 			m.gamePlay,
+ 			m.matchingNum,
+ 			m.subject,
+ 			m.gameDate,
+ 			m.writerId,
+ 			t.teamName,
+ 			t.teamIdx,
+ 			m.content,
+ 			m.courtIdx,
+ 			(SELECT COUNT(userID) FROM game WHERE gameAppState='확정' AND matchingIdx = m.matchingIdx) AS matchingNumforSure,
+ 			(SELECT gu FROM location WHERE locationIdx = (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu, 
+ 			(SELECT courtName From court Where courtIdx=m.courtIdx) AS courtName,
+ 			(SELECT courtLatitude From court Where courtIdx=m.courtIdx) AS courtLatitude,
+ 			(SELECT courtLongitude From court Where courtIdx=m.courtIdx) AS courtLongitude,
+ 			(SELECT courtAddress From court Where courtIdx=m.courtIdx) AS courtAddress,
+ 			(SELECT courtTel From court Where courtIdx=m.courtIdx) AS courtTel
+ 		FROM matching m
+ 		LEFT JOIN teamuser tu ON m.writerId = tu.userId AND tu.teamUserState ='join'
+		LEFT JOIN team t ON tu.teamIdx = t.teamIdx 
+ 		Where matchingIdx = #{param1}
+ 		
+ 	</select>
+ 	
+ 	<update id="upHit">
+ 		UPDATE matching SET bHit = bHit+1 WHERE matchingIdx=#{param1}
+ 	</update>
+ 	
+ 	<update id="downHit">
+ 		UPDATE matching SET bHit = bHit-1 WHERE matchingIdx=#{param1}
+ 	</update>
+ 	
+ 	<insert id="matchingWrite" useGeneratedKeys="true" keyColumn="matchingIdx" keyProperty="matchingIdx" parameterType="kr.co.cf.matching.dto.MatchingDTO">
+ 		INSERT INTO matching(categoryId,content,courtIdx,gameDate,gamePlay,matchingNum,subject,writerId)
+ 		VALUES(#{categoryId},#{content},#{courtIdx},#{gameDate},#{gamePlay},#{matchingNum},#{subject},#{writerId})
+ 	</insert>
+ 	
+ 	<insert id="game" parameterType="kr.co.cf.matching.dto.MatchingDTO">
+ 		INSERT INTO game(categoryId,matchingIdx,userId,gameAppState)
+		VALUES(#{categoryId},#{matchingIdx},#{writerId},#{gameAppState})
+ 	</insert>
+ 	
+ 	
+ 	<insert id="matchingDeleteAlarm">
+		INSERT INTO alarm(categoryId,userId,alarmcontent,alarmKind) VALUES(#{param3},#{param1},#{param4},#{param2})
+	</insert> 
+	
+ 	<delete id="deleteGame">
+ 		DELETE FROM game WHERE matchingIdx = #{param1};
+ 	</delete>
+ 	
+ 	<delete id="deleteMatching">
+ 		DELETE FROM matching WHERE matchingIdx = #{param1};
+ 	</delete>
+ 	
+ 	<select id="locationList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+ 		SELECT locationIdx, gu FROM location;
+ 	</select>
+	
+	<select id="matchingWriterData" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT locationIdx, gu FROM location WHERE locationIdx = (SELECT locationIdx FROM userData WHERE userId=#{param1})
+	</select>
+	
+	<select id="courtList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT courtIdx, locationIdx, courtName, courtTel, courtInOut, courtState, courtLatitude, courtLongitude, courtAddress FROM court
+	</select>
+	
+	<select id="categoryIdChk" resultType="String">
+		SELECT categoryId FROM matching WHERE matchingIdx=#{param1}
+	</select>
+	
+	<update id="matchingUpdate" parameterType="hashmap">
+		UPDATE matching SET subject=#{subject},gameDate=#{gameDate}, gamePlay=#{gamePlay},matchingNum=#{matchingNum},content=#{content},courtIdx=#{courtIdx} WHERE matchingIdx=#{matchingIdx}
+	</update>
+
+	<insert id="matchingUpdateAlarm" parameterType="hashmap">
+		INSERT INTO alarm(categoryId,userId,alarmcontent,alarmKind) VALUES(#{categoryId},#{userId},'수정',#{matchingIdx})
+	</insert> 
+	
+	
+	
+	
+	<select id="commentList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT
+			commentIdx,
+			userId,
+			commentWriteTime,
+			commentContent
+		FROM comment
+		WHERE comentId=#{param1} AND categoryId='m01' OR categoryId='m02'
+	</select>
+	
+	<insert id="commentWrite" parameterType="hashmap">
+		INSERT INTO comment(userId, categoryId,comentId,commentContent) VALUES(#{userId},#{categoryId},#{comentId},#{commentContent})
+	</insert>
+	
+	<delete id="commentDelete">
+		DELETE FROM comment WHERE commentIdx = #{param1}
+	</delete>
+	
+	<select id="commentGet" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT
+			commentIdx,
+			userId,
+			commentWriteTime,
+			commentContent
+		FROM comment
+		WHERE commentIdx=#{param1}
+	</select>
+	
+	<update id="commentUpdate" parameterType="hashmap">
+		UPDATE comment SET commentContent=#{commentContent} WHERE commentIdx=#{commentIdx}
+	
+	</update>
+	
+	<select id="totalCount" resultType="int">
+		SELECT COUNT(matchingIdx) FROM matching WHERE categoryId=#{param1} AND matchigState='matching'
+	</select>
+	
+	<select id="totalCountGamePlay" parameterType="hashmap" resultType="int">
+		SELECT COUNT(matchingIdx) FROM matching WHERE gamePlay=#{gamePlay} AND categoryId=#{categoryId} AND matchigState='matching'
+	</select>
+	
+	<select id="totalCountLocationIdx" parameterType="hashmap" resultType="int">
+		SELECT COUNT(matchingIdx) FROM matching WHERE courtIdx IN (SELECT courtIdx FROM court WHERE locationIdx =#{locationIdx}) AND categoryId=#{categoryId} AND matchigState='matching'
+	</select>
+	
+	<select id="totalCountSearch" resultType="int">
+		SELECT COUNT(matchingIdx) FROM matching 
+		WHERE categoryId=#{param1} AND matchigState='matching' AND (subject LIKE CONCAT('%' #{param2} '%') OR writerId LIKE CONCAT('%' #{param2} '%'))
+	</select>	
+	
+	
+	<select id="totalCountAll" parameterType="hashmap" resultType="int">
+		SELECT COUNT(matchingIdx) FROM matching WHERE courtIdx IN (SELECT courtIdx FROM court WHERE locationIdx =#{locationIdx}) AND categoryId=#{categoryId} AND gamePlay=#{gamePlay} AND matchigState='matching'
+	</select>
+	
+	<select id="list" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+		  m.categoryId,
+		  m.matchingIdx,
+		  t.teamName,
+		  t.teamIdx,
+		  m.writerId, 
+		  (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx) AS locationIdx,
+		  (SELECT gu FROM location WHERE locationIdx = (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu, 
+		  m.subject, 
+		  m.gameDate, 
+		  m.gamePlay, 
+		  m.matchingWriteDate,
+		  (SELECT COUNT(userID) FROM game WHERE gameAppState='확정' AND matchingIdx = m.matchingIdx) AS matchingNumforSure, 
+		  m.matchingNum, 
+		  m.content, 
+		  m.matchigState,
+		  m.bHit 
+		FROM matching m
+		LEFT JOIN teamuser tu ON m.writerId = tu.userId AND tu.teamUserState ='join'
+		LEFT JOIN team t ON tu.teamIdx = t.teamIdx
+		WHERE categoryId=#{param2} AND matchigState='matching'
+		ORDER By matchingIdx DESC 
+		LIMIT 10 OFFSET #{param1}
+	</select>
+
+	<select id="listGamePlay" parameterType="hashmap" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+		  m.categoryId,
+		  m.matchingIdx,
+		  t.teamName,
+		  m.writerId, 
+		  (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx) AS locationIdx,
+		  (SELECT gu FROM location WHERE locationIdx = (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu, 
+		  m.subject, 
+		  m.gameDate, 
+		  m.gamePlay, 
+		  m.matchingWriteDate,
+		  (SELECT COUNT(userID) FROM game WHERE gameAppState='확정' AND matchingIdx = m.matchingIdx) AS matchingNumforSure, 
+		  m.matchingNum, 
+		  m.content, 
+		  m.matchigState,
+		  m.bHit 
+		FROM matching m
+		LEFT JOIN teamuser tu ON m.writerId = tu.userId AND tu.teamUserState ='join'
+		INNER JOIN team t ON tu.teamIdx = t.teamIdx
+		WHERE gamePlay=#{gamePlay} AND categoryId =#{categoryId}
+		ORDER By matchingIdx DESC 
+		LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<select id="listLocationIdx" parameterType="hashmap" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+		  m.categoryId,
+		  m.matchingIdx,
+		  t.teamName,
+		  m.writerId, 
+		  (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx) AS locationIdx,
+		  (SELECT gu FROM location WHERE locationIdx = (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu, 
+		  m.subject, 
+		  m.gameDate, 
+		  m.gamePlay, 
+		  m.matchingWriteDate,
+		  (SELECT COUNT(userID) FROM game WHERE gameAppState='확정' AND matchingIdx = m.matchingIdx) AS matchingNumforSure, 
+		  m.matchingNum, 
+		  m.content, 
+		  m.matchigState,
+		  m.bHit 
+		FROM matching m
+		LEFT JOIN teamuser tu ON m.writerId = tu.userId AND tu.teamUserState ='join'
+		INNER JOIN team t ON tu.teamIdx = t.teamIdx
+		WHERE courtIdx IN (SELECT courtIdx FROM court WHERE locationIdx =#{locationIdx}) AND categoryId =  #{categoryId}
+		ORDER By matchingIdx DESC 
+		LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<select id="listAll" parameterType="hashmap" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+		 m.categoryId,
+		  m.matchingIdx,
+		  t.teamName,
+		  m.writerId, 
+		  (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx) AS locationIdx,
+		  (SELECT gu FROM location WHERE locationIdx = (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu, 
+		  m.subject, 
+		  m.gameDate, 
+		  m.gamePlay, 
+		  m.matchingWriteDate,
+		  (SELECT COUNT(userID) FROM game WHERE gameAppState='확정' AND matchingIdx = m.matchingIdx) AS matchingNumforSure, 
+		  m.matchingNum, 
+		  m.content, 
+		  m.matchigState,
+		  m.bHit 
+		FROM matching m
+		LEFT JOIN teamuser tu ON m.writerId = tu.userId AND tu.teamUserState ='join'
+		INNER JOIN team t ON tu.teamIdx = t.teamIdx
+		WHERE gamePlay=#{gamePlay} AND courtIdx IN (SELECT courtIdx FROM court WHERE locationIdx =#{locationIdx}) AND categoryId =  #{categoryId} 
+		ORDER By matchingIdx DESC 
+		LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<select id="listSearch" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT  
+		  m.categoryId,
+		  m.matchingIdx,
+		  t.teamName,
+		  m.writerId, 
+		  (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx) AS locationIdx,
+		  (SELECT gu FROM location WHERE locationIdx = (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu, 
+		  m.subject, 
+		  m.gameDate, 
+		  m.gamePlay, 
+		  m.matchingWriteDate,
+		  (SELECT COUNT(userID) FROM game WHERE gameAppState='확정' AND matchingIdx = m.matchingIdx) AS matchingNumforSure, 
+		  m.matchingNum, 
+		  m.content, 
+		  m.matchigState,
+		  m.bHit 
+		FROM matching m
+		LEFT JOIN teamuser tu ON m.writerId = tu.userId AND tu.teamUserState ='join'
+		INNER JOIN team t ON tu.teamIdx = t.teamIdx
+		WHERE categoryId=#{categoryId} AND (subject LIKE CONCAT('%' #{search} '%') OR writerId LIKE CONCAT('%' #{search} '%'))
+		ORDER By matchingIdx DESC 
+		LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<select id="applyGameChk" resultType="int">
+		SELECT COUNT(userId) FROM game WHERE matchingIdx = #{param1} AND userId=#{param2} AND gameAppState='신청'
+	</select>
+	
+	<insert id="applyGame">
+		INSERT INTO game(categoryId,matchingIdx,userId,gameAppState) values('m01',#{param1},#{param2},'신청')
+	</insert>
+	
+	<delete id="applyGameDelete">
+		DELETE FROM game WHERE matchingIdx=#{param1}  AND userId=#{param2} AND gameAppState='신청'
+	</delete>
+	
+	
+	
+	<update id="matchigStateToFinish">
+		UPDATE matching SET matchigState = 'finish' WHERE matchingIdx=#{param1}
+	</update>
+	
+	<delete id="matchigStateToFinishDelete">
+		DELETE FROM game WHERE matchingIdx=#{param1} AND (gameAppState='초대' OR gameAppState='신청')
+	</delete>
+	
+	<delete id="matchigStateToFinishDeleteAlarm">
+		DELETE FROM alarm WHERE alarmKind=#{param1} AND (alarmcontent='초대' OR alarmcontent='신청')
+	</delete>
+	
+	<update id="matchigStateToReview">
+		UPDATE matching SET matchigState = 'review' WHERE matchingIdx=#{param1}
+	</update>
+	
+	<select id="playerList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT userId,matchingIdx FROM game WHERE matchingIdx=#{param1} AND gameAppState='확정' ORDER BY gameAppDate
+	</select>
+	
+	<select id="playChk" resultType="int">
+		SELECT COUNT(userId) FROM game WHERE userId =#{param1} AND matchingIdx=#{param2} AND gameAppState='확정'
+	</select>
+	
+	
+	<select id="playerTeamList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+			g.userId,
+			tu.teamIdx,
+			t.teamName,
+			tu.teamGrade 
+		FROM game g 
+		LEFT JOIN teamuser tu ON tu.userId = g.userId AND tu.teamUserState ='join'
+		JOIN team t ON tu.teamIdx =t.teamIdx 
+		WHERE matchingIdx=#{param1} AND gameAppState='확정'
+	</select>
+	
+	<delete id="playerDelete">
+		DELETE FROM game WHERE matchingIdx=#{param1} AND userId=#{param2}
+	</delete>
+	
+	<select id="gameApplyList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT userId FROM game WHERE matchingIdx=#{param1} AND gameAppState='신청' ORDER BY gameAppDate
+	</select>
+	
+	<select id="teamApplyList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+			g.userId,
+			tu.teamIdx,
+			t.teamName,
+			tu.teamGrade 
+		FROM game g
+		LEFT JOIN teamuser tu ON tu.userId = g.userId 
+		JOIN team t ON tu.teamIdx =t.teamIdx 
+		WHERE matchingIdx=#{param1} AND gameAppState='신청' ORDER BY gameAppDate
+	</select>
+	
+	
+	<update id="gameApplyAccept">
+		UPDATE game SET gameAppState='확정' WHERE matchingIdx=#{param1} AND userId=#{param2} AND gameAppState='신청'
+	</update>
+	
+	<delete id="gameApplyReject">
+		DELETE FROM game WHERE matchingIdx=#{param1} AND userId=#{param2} AND gameAppState='신청'
+	</delete>
+	
+	<delete id="applyGameAlarmDelete">
+		DELETE FROM alarm WHERE alarmKind=#{param1} AND userId=#{param2} AND alarmcontent='신청'
+	</delete>
+	
+	<select id="userList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT userId
+		FROM user
+		WHERE 
+		(userId NOT IN ( SELECT userId FROM game WHERE matchingIdx = #{param1} AND gameAppState IN ('신청', '확정','초대')	))
+		AND (userId != 'carrotadmin')
+	</select>
+	
+	<select id="teamList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+			t.teamIdx, 
+			t.teamName, 
+			t.locationIdx, 
+			t.teamFavNum, 
+			tu.userId
+		FROM team t 
+		RIGHT JOIN teamuser tu ON t.teamIdx = tu.teamIdx
+		WHERE t.teamDisband=0 AND tu.teamGrade='leader' AND tu.teamUserState='join' AND userId NOT IN  ( SELECT userId FROM game WHERE matchingIdx =#{param1})
+	</select>
+	
+	<insert id="gameInvite" parameterType="hashmap">
+		INSERT INTO game(categoryId,matchingIdx,userId,gameAppState) VALUES(#{categoryId},#{matchingIdx},#{userId},'초대')
+	</insert>
+	
+	<update id="inviteAccept">
+		UPDATE game SET gameAppState='확정' WHERE matchingIdx=#{param1} AND userId=#{param2} AND gameAppState='초대'
+	</update>
+	
+	
+	<delete id="inviteReject">
+		DELETE FROM game WHERE matchingIdx=#{param1} AND userId=#{param2} AND gameAppState='초대'
+	</delete>
+	
+	<delete id="inviteAlarmDelete">
+		DELETE FROM alarm WHERE alarmKind=#{param1} AND userId=#{param2} AND alarmcontent='초대'
+	</delete>	
+	
+	<insert id="teamRegist" parameterType="hashmap">
+		INSERT INTO game(categoryId,matchingIdx,userId,gameAppState) VALUES('m02',#{matchingIdx},#{userId},'확정')
+	</insert>
+	
+	<insert id="teamRegistAlarm" parameterType="hashmap">
+		INSERT INTO alarm(categoryId,userId,alarmcontent,alarmKind) VALUES(#{categoryId},#{userId},'등록',#{matchingIdx})
+	</insert>
+	
+	<insert id="cancelGameInvite" parameterType="hashmap">
+		DELETE FROM game WHERE matchingIdx=#{matchingIdx} AND userId=#{userId} AND gameAppState='초대'
+	</insert>
+	
+	<insert id="cancelRegist" parameterType="hashmap">
+		DELETE FROM game WHERE matchingIdx=#{matchingIdx} AND userId=#{userId} AND gameAppState='확정'
+	</insert>
+	
+	
+	<select id="gameInviteList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT userId FROM game WHERE matchingIdx=#{param1} AND gameAppState='초대'
+	</select>
+	
+	
+	<select id="teamInviteList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+			g.userId,
+			tu.teamIdx,
+			t.teamName
+		FROM game g 
+		LEFT JOIN teamuser tu ON tu.userId = g.userId 
+		JOIN team t ON tu.teamIdx =t.teamIdx 
+		WHERE matchingIdx=#{param1} AND gameAppState='초대' AND tu.teamGrade = 'leader';
+	</select>
+	
+	<insert id="mvp" parameterType="hashmap">
+		INSERT INTO mvp(matchingIdx,writerId,receiveId) Values(#{matchingIdx},#{writerId},#{receiveId})
+	</insert>
+	
+	<select id="mvpCnt" resultType="hashmap">
+		SELECT receiveId, count(receiveId) AS cnt FROM mvp WHERE matchingIdx=#{param1} GROUP BY receiveId ;
+	</select>
+		
+	<insert id="manner" parameterType="hashmap">
+		INSERT INTO review(matchingIdx,writerId,receiveId,userMannerScore) Values(#{param1},#{param2},#{param3},#{param4})
+	</insert>
+	
+	<select id="review" resultType="int">
+		SELECT COUNT(writerId) FROM mvp WHERE matchingIdx=${param1} AND writerId=#{param2}
+	</select>
+	
+	<select id="mannerPoint" resultType="float">
+		SELECT SUM(userMannerScore) FROM review WHERE receiveId=#{param1}
+	</select>
+	
+	<select id="cntReview" resultType="int">
+		SELECT COUNT(matchingIdx) FROM mvp WHERE receiveId=#{param1} AND matchingIdx =#{param2} 
+	</select>
+	
+	<delete id="deleteAlarm">
+		DELETE FROM alarm WHERE alarmKind=#{param1} AND categoryId=#{param2}
+	</delete>
+	
+	<insert id="gameInviteAlarm" parameterType="hashmap">
+		INSERT INTO alarm(categoryId,userId,alarmcontent,alarmKind) VALUES(#{categoryId},#{userId},'초대',#{matchingIdx})
+	</insert>
+	
+	<delete id="gameInviteCancelAlarm" parameterType="hashmap">
+		DELETE FROM alarm WHERE userId=#{userId} AND alarmKind=#{matchingIdx} AND alarmcontent='초대'
+	</delete>
+		
+	<insert id="playerDeleteAlarm">
+		INSERT INTO alarm(categoryId,userId,alarmcontent,alarmKind) VALUES(#{param3},#{param2},'참가취소',#{param1})
+	</insert>
+	
+	<insert id="applyGameAlarm">
+		INSERT INTO alarm(categoryId,userId,alarmcontent,alarmKind) VALUES(#{param1},#{param3},'신청',#{param2})
+	</insert>
+	
+	<insert id="gameApplyAcceptAlarm">
+		INSERT INTO alarm(categoryId,userId,alarmcontent,alarmKind) VALUES(#{param3},#{param2},'신청수락',#{param1})
+	</insert>
+
+	<insert id="gameApplyRejectAlarm">
+		INSERT INTO alarm(categoryId,userId,alarmcontent,alarmKind) VALUES(#{param3},#{param2},'신청거절',#{param1})
+	</insert>
+	
+	<select id="inviteChk" resultType="int">
+		SELECT COUNT(userId) FROM game WHERE matchingIdx=#{param1} AND userId=#{param2} AND gameAppState='초대'
+	</select>
+		
+	<insert id="matchingReport" parameterType="hashmap">
+		INSERT INTO report(categoryId, userId, reportContent, reportState, reportId,reportUserId) VALUES('rm',#{userId},#{reportContent},'미처리',#{matchingIdx},#{reportUserId})
+	</insert>
+	
+	<insert id="commentReport" parameterType="hashmap">
+		INSERT INTO report(categoryId, userId, reportContent, reportState, reportId,reportUserId) VALUES('rc',#{userId},#{reportContent},'미처리',#{commentIdx},#{reportUserId})
+	</insert>
+	
+
+	<select id="leaderChk" resultType="String">
+		SELECT teamName FROM team WHERE teamIdx=(SELECT teamIdx FROM teamuser WHERE userId=#{param1} AND teamGrade ='leader' AND teamUserState = 'join')
+	</select>
+	
+	<select id="leaderQ" resultType="int">
+		SELECT count(teamName) FROM team WHERE teamIdx=(SELECT teamIdx FROM teamuser WHERE userId=#{param1} AND teamGrade ='leader' AND teamUserState = 'join')
+	</select>
+	
+	<select id="matchingTeamData" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT locationIdx , gu FROM location WHERE locationIdx = (SELECT locationIdx FROM team WHERE teamName =#{param1})
+	</select>
+	
+	<select id="myTeam" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+			tu.userId,
+			tu.teamIdx,
+			tu.teamGrade,
+			t.teamName 
+		FROM teamuser tu
+		JOIN team t ON tu.teamIdx = t.teamIdx 
+		WHERE tu.userId = #{param1} AND tu.teamUserState='join'
+	</select>
+	
+	<select id="teamMemberList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+			tu.teamIdx,
+			t.userId 
+		FROM teamuser tu
+		RIGHT JOIN teamuser t ON tu.teamIdx = t.teamIdx AND tu.teamUserState ='join'
+		WHERE tu.userId=#{param1} AND t.userId NOT IN (SELECT userId FROM game WHERE matchingIdx=#{param2} AND gameAppState='확정')
+	</select>
+	
+	<insert id="teamTagReview">
+		INSERT INTO tagreview(matchingIdx, teamId, tagIdx) VALUES(#{param1},#{param2},#{param3})
+	</insert>
+	
+	<select id="tagList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT tagIdx, tagContent FROM tag
+	</select>
+	
+	<select id="tagChk" resultType="int">
+		SELECT COUNT(tagIdx) FROM tagreview WHERE matchingIdx=#{param1} AND teamId=#{param2}
+	</select>
+	
+	<select id="getSubject" resultType="String">
+		SELECT subject FROM matching WHERE matchingIdx=#{param1}
+	</select>
+	
+	<insert id="reviewAlarm">
+		INSERT INTO alarm(categoryId,userId,alarmcontent,alarmKind) VALUES(#{param1},#{param2},'리뷰',#{param3})
+	</insert>
+	
+	<delete id="delete">
+		DELETE FROM alarm WHERE alarmIdx=#{parma1}
+	</delete>
+</mapper>
+
+

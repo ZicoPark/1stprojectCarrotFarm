@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.cf.admin.dao.AdminReportDAO">
+	
+	<select id="reportCnt" resultType="int">
+		SELECT COUNT(reportIdx) FROM report
+	</select>
+	
+	<select id="reportList" resultType="kr.co.cf.admin.dto.AdminReportDTO">
+		SELECT * FROM report
+		limit 10 OFFSET #{param1}
+	</select>
+	
+	<select id="categoryCnt" resultType="int">
+		SELECT COUNT(reportIdx) FROM report
+		WHERE categoryId=#{param1}
+	</select>
+	
+	<select id="categoryList" resultType="kr.co.cf.admin.dto.AdminReportDTO">
+		SELECT * FROM report
+		WHERE categoryId=#{param1}
+		limit 10 OFFSET #{param2}
+	</select>
+	
+	<select id="reportStateCnt" resultType="int">
+		SELECT COUNT(reportIdx) FROM report
+		WHERE reportState=#{param1}
+	</select>
+	
+	<select id="reportStateList" resultType="kr.co.cf.admin.dto.AdminReportDTO">
+		SELECT * FROM report
+		WHERE reportState=#{param1}
+		limit 10 OFFSET #{param2}
+	</select>
+	
+	<select id="sortCnt" resultType="int">
+		SELECT COUNT(reportIdx) FROM report
+		WHERE reportState=#{param1} AND categoryId=#{param2}
+	</select>
+	
+	<select id="sortList" resultType="kr.co.cf.admin.dto.AdminReportDTO">
+		SELECT * FROM report
+		WHERE reportState=#{param1} AND categoryId=#{param2}
+		limit 10 OFFSET #{param3}
+	</select>
+	
+	<select id="reportSearchCnt" resultType="int">
+		SELECT COUNT(reportIdx) FROM report
+		WHERE userId like concat('%', #{param1}, '%') 
+		OR reportUserId like concat('%', #{param1}, '%') 
+	</select>
+	
+	<select id="reportSearchList" resultType="kr.co.cf.admin.dto.AdminReportDTO">
+		SELECT * FROM report
+		WHERE userId like concat('%', #{param1}, '%') 
+		OR reportUserId like concat('%', #{param1}, '%')
+		limit 10 OFFSET #{param2}
+	</select>
+	
+	<select id="searchCategoryCnt" resultType="int">
+		SELECT COUNT(reportIdx) FROM report
+		WHERE ${param1} like concat('%', #{param2}, '%')
+	</select>
+	
+	<select id="searchCategoryList" resultType="kr.co.cf.admin.dto.AdminReportDTO">
+		SELECT * FROM report
+		WHERE ${param1} like concat('%', #{param2}, '%')
+		limit 10 OFFSET #{param3}
+	</select>
+	
+	<select id="reportInfo" resultType="kr.co.cf.admin.dto.AdminReportDTO" parameterType="hashmap">
+		SELECT * FROM report
+		WHERE reportIdx=#{reportIdx}
+	</select>
+	
+	<select id="selectReview" resultType="String" parameterType="hashmap">
+		SELECT courtIdx FROM courtReview
+		where courtReviewIdx = #{reportId};
+	</select>
+	
+	<select id="recordList" resultType="kr.co.cf.admin.dto.AdminReportDTO" parameterType="hashmap" >
+		SELECT * FROM reportRecord
+		WHERE reportIdx In(select reportIdx from report where categoryId=#{categoryId} and reportId=#{reportId})
+	</select>
+	
+	<select id="selectReviewPhoto" parameterType="hashmap" resultType="String">
+		SELECT photoName FROM photo
+		WHERE categoryId='p01' AND photoId=#{reportId}
+	</select>
+	
+	<delete id="reportReviewDel" parameterType="hashmap">
+		DELETE FROM courtReview WHERE courtReviewIdx=#{reportId}
+	</delete>
+	
+	<delete id="reportReviewPhotoDel" parameterType="hashmap">
+		DELETE FROM photo WHERE categoryId='p01' AND photoId=#{reportId}
+	</delete>
+	
+	<insert id="adminReportPro" parameterType="hashmap">
+		INSERT INTO reportRecord(reportIdx,reportResult,reportReason,reportCheck,recordState)
+		VALUES(#{reportIdx},#{reportResult},#{reportReason},#{reportCheck},1)
+	</insert>
+	
+	<select id="adminRecordState" resultType="String" parameterType="hashMap">
+		SELECT recordState FROM reportRecord
+		where reportIdx In(select reportIdx from report where categoryId=#{categoryId} and reportId=#{reportId})
+		ORDER BY reportRecordDate DESC 
+		LIMIT 1
+	</select>
+	
+	<update id="adminReportState" parameterType="hashmap">
+		UPDATE report SET reportState='처리완료'
+		WHERE reportId=#{reportId} AND categoryId=#{categoryId}
+	</update>
+	
+	<update id="adminReportUpdate" parameterType="hashmap">
+		UPDATE reportRecord  SET recordState = 0, reportCheck=0
+		WHERE  reportIdx In(select reportIdx from report where categoryId=#{categoryId} and reportId=#{reportId})
+		ORDER BY reportRecordDate DESC 
+		LIMIT 1
+	</update>
+	
+	<update id="adminReportUpdateState" parameterType="hashmap">
+		UPDATE report SET reportState='처리중'
+		WHERE reportId=#{reportId} AND categoryId=#{categoryId}
+	</update>
+	
+	<select id="selectReportResult" parameterType="hashmap" resultType="String">
+		SELECT reportResult FROM reportRecord
+		where reportIdx In(select reportIdx from report where categoryId=#{categoryId} and reportId=#{reportId})
+		ORDER BY reportRecordDate DESC 
+		LIMIT 1 
+	</select>
+	
+	<update id="userRestriction" parameterType="hashmap">
+		UPDATE user SET userState = '영구제한', userBlind =1
+		WHERE userId=(SELECT reportUserId FROM report WHERE reportIdx=#{reportIdx})
+	</update>
+	
+	<update id="userRestrictionCancel" parameterType="hashmap">
+		UPDATE user SET userState = '사용중', userBlind =0
+		WHERE userId=(SELECT reportUserId FROM report WHERE reportIdx=#{reportIdx})
+	</update>
+	
+	<select id="selectCategory" parameterType="hashmap" resultType="String">
+		SELECT categoryId FROM board
+		WHERE boardIdx=#{reportId}
+	</select>
+	
+	<select id="SelectBoard" parameterType="hashmap" resultType="String">
+		SELECT boardIdx FROM board WHERE  boardIdx=#{reportId}
+	</select>
+	
+	<update id="reportBoardBlind" parameterType="hashmap">
+		UPDATE board SET categoryId=#{newCategory}
+		WHERE boardIdx=#{reportId} 
+	</update>
+	
+	<update id="boardBlindCancel" parameterType="hashmap">
+		UPDATE board SET categoryId=#{newCategoryId}
+		WHERE boardIdx=#{reportId}
+	</update>
+	
+	
+	<insert id="adminReportProCancel" parameterType="hashmap">
+		INSERT INTO reportRecord(reportIdx,reportResult,reportReason,reportCheck,recordState)
+		VALUES(#{reportIdx},'신고 처리 취소','협의 후 취소결정',#{reportCheck},0)
+	</insert>
+	
+	<select id="warningCount" parameterType="hashmap" resultType="String">
+		SELECT SUM(reportCheck) FROM reportRecord
+		WHERE reportIdx IN(SELECT reportIdx FROM report WHERE reportUserId=#{reportUserId})
+	</select>
+	
+	<select id="selectMatchingCategory" parameterType="hashmap" resultType="String">
+		SELECT categoryId FROM matching WHERE matchingIdx=#{reportId}
+	</select>
+	
+	<select id="selectMatchingIdx" parameterType="hashmap" resultType="String">
+		SELECT matchingIdx FROM matching WHERE matchingIdx=#{reportId}
+	</select>
+	
+	<update id="reportMatchingBlind" parameterType="hashmap">
+		UPDATE matching SET categoryId=#{newCategory} WHERE matchingIdx=#{reportId}
+	</update>
+	
+	<update id="matchingBlindCancel" parameterType="hashmap">
+		UPDATE matching SET categoryId=#{newCategoryId} WHERE matchingIdx=#{reportId}
+	</update>
+	
+	<select id="SelectComment" parameterType="hashmap" resultType="String">
+		SELECT commentIdx FROM comment WHERE commentIdx=#{reportId}
+	</select>
+	
+	<select id="selectCommentContent" parameterType="hashmap" resultType="String" >
+		SELECT commentContent FROM comment WHERE commentIdx=#{reportId}
+	</select>
+	
+	<update id="reportCommentBlind" parameterType="hashmap">
+		UPDATE comment SET commentBlind=1 WHERE commentIdx=#{reportId}
+	</update>
+	
+	<update id="commentBlindCancel" parameterType="hashmap">
+		UPDATE comment SET commentBlind=0 WHERE commentIdx=#{reportId}
+	</update>
+	
+	<update id="adminReportProcess" parameterType="hashmap">
+		UPDATE report SET reportState='처리완료'
+		WHERE reportId=#{reportId} AND categoryId=#{categoryId}
+	</update>
+	
+	<insert id="reportAlarm" parameterType="hashmap">
+		INSERT INTO alarm (categoryId,userId,alarmContent,alarmKind)
+		VALUES('r',#{reportUserId},#{reportReason},#{reportIdx})
+	</insert>
+	
+	
+	
+		
+</mapper>

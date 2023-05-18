@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.cf.main.dao.JoinDAO">
+	
+<select id="idChk" resultType="int">
+      SELECT COUNT(userId) FROM user WHERE userId = #{param1}
+   </select>
+   
+   <select id="nickChk" resultType="int">
+      SELECT COUNT(nickName) FROM user WHERE nickName = #{param1}
+   </select>
+   
+   <insert id="join" parameterType="kr.co.cf.main.dto.JoinDTO">
+      INSERT INTO user(userId,nickName,userPw,userName,birthday,email,userBlind) 
+         VALUES(#{userId},#{nickName},#{userPw},#{userName},#{birthday},#{email},false)
+   </insert>
+   
+   <insert id="joinData" parameterType="kr.co.cf.main.dto.JoinDTO">
+      INSERT INTO userData(userId,height,position,locationIdx,favTime) 
+         VALUES(#{userId},#{height},#{position},#{locationIdx},#{favTime})
+   </insert>
+
+	<insert id="photoWrite">
+      INSERT INTO photo(categoryId,photoName,photoId) 
+      VALUES('p02',#{param1}, #{param2})
+   	</insert>
+   	
+   	<select id="locationFind" resultType="int">
+      SELECT locationIdx FROM location WHERE gu = #{param1}
+   </select>
+   
+   <select id="login" resultType="kr.co.cf.main.dto.JoinDTO">
+		SELECT userId FROM user WHERE
+			userId = #{param1} AND userPw = #{param2} AND userBlind = false	
+	</select>
+	
+	<select id="findId" resultType="kr.co.cf.main.dto.JoinDTO">
+		select * from user where EMAIL = #{email}
+	</select>
+	
+	<select id="findIdCheck" resultType="int">
+		select count(*) from user where Email = #{memberEmail}
+	</select>
+	
+	<!-- 비밀번호 변경 -->
+	<update id="updatePw" >
+		update user set userPw = #{pw} where userId = #{id}
+	</update>
+	
+	<!-- 유저 블라인드 -->
+	<update id="userdelete">
+      UPDATE user SET userBlind = true, userState='탈퇴'  WHERE userId = #{param1}
+   </update>
+   
+
+	
+	 <!-- 회원 정보 -->
+   <select id="userInfo" resultType="kr.co.cf.main.dto.JoinDTO">
+      SELECT u.userId, u.nickName, u.userPw, u.userName, u.birthday, u.email,
+      d.height, d.position, d.favTime, l.si, l.gu,
+      (select photoName from photo where photoId = u.userId) as photoName
+      FROM user u JOIN userData d ON u.userId = d.userId JOIN location l ON d.locationIdx = l.locationIdx
+      WHERE u.userId = #{param1}
+   </select>
+	
+	<!-- 회원정보 수정 -->
+	<update id="userInfoUpdate" parameterType="hashmap">
+		UPDATE user SET nickName = #{nickName}
+			,userPw = #{userPw}
+			,email = #{email}
+		WHERE userId = #{userId}
+	</update>
+	
+	<update id="userInfoUpdatedata" parameterType="hashmap">
+		UPDATE userData SET height = #{height}
+			,position = #{position}
+			,favTime = #{favTime}
+		WHERE userId = #{userId}
+	</update>
+	
+	<update id="userInfoUpdateloc">
+		UPDATE userData SET locationIdx = #{param1}
+		WHERE userId = #{param2}
+	</update>
+	
+	<update id="photoUpdate">
+		UPDATE photo SET photoName = #{param1}
+		WHERE photoId = #{param2}
+	</update>
+	
+	
+	<!-- 리뷰 경기 -->
+	
+	<select id="reviewList" resultType="kr.co.cf.main.dto.JoinDTO">
+		SELECT 
+			m.matchingIdx,
+			(SELECT gu FROM location WHERE locationIdx = (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu,
+			m.subject,
+			m.gameDate,
+			m.gamePlay,
+			m.categoryId
+		FROM matching m 
+		LEFT JOIN game g ON m.matchingIdx = g.matchingIdx AND g.userId =#{userId}
+		WHERE m.matchigState = 'review'
+		ORDER BY m.matchingIdx DESC
+		LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<select id="GameDateListDesc" resultType="kr.co.cf.main.dto.JoinDTO">
+		SELECT 
+			m.matchingIdx,
+			(SELECT gu FROM location WHERE locationIdx = 
+				(SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu,
+			m.subject,
+			m.gameDate,
+			m.gamePlay
+		FROM matching m 
+		INNER JOIN game g ON m.matchingIdx = g.matchingIdx
+		WHERE m.categoryId = 'm01'OR  m.categoryId = 'm02'
+			AND m.matchigState = 'review'
+			AND g.userId = #{userId}
+			AND g.gameAppState = '확정'
+		ORDER BY m.gameDate DESC
+		LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<select id="GameDateListAsc" resultType="kr.co.cf.main.dto.JoinDTO">
+		SELECT 
+			m.matchingIdx,
+			(SELECT gu FROM location WHERE locationIdx = 
+				(SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu,
+			m.subject,
+			m.gameDate,
+			m.gamePlay
+		FROM matching m 
+		INNER JOIN game g ON m.matchingIdx = g.matchingIdx
+		WHERE m.categoryId = 'm01'OR  m.categoryId = 'm02'
+			AND m.matchigState = 'review'
+			AND g.userId = #{userId}
+			AND g.gameAppState = '확정'
+		ORDER BY m.gameDate ASC	
+		LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<select id="SearchGameList" resultType="kr.co.cf.main.dto.JoinDTO">
+		SELECT 
+			m.matchingIdx,
+			(SELECT gu FROM location WHERE locationIdx = 
+				(SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu,
+			m.subject,
+			m.gameDate,
+			m.gamePlay
+		FROM matching m
+		INNER JOIN game g ON m.matchingIdx = g.matchingIdx
+		WHERE m.categoryId = 'm01'OR  m.categoryId = 'm02'
+			AND m.matchigState = 'review'
+			AND g.userId = #{userId}
+			AND g.gameAppState = '확정'
+			AND subject LIKE CONCAT(#{searchText})
+		ORDER BY m.matchingIdx DESC		
+		LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	
+	
+	<!-- 참여했던 전체 경기 -->
+	
+	<select id="allGameList" resultType="kr.co.cf.main.dto.JoinDTO">
+		SELECT 
+			m.matchingIdx,
+			(SELECT gu FROM location WHERE locationIdx = 
+				(SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu,
+			m.subject,
+			m.gameDate,
+			m.gamePlay
+		FROM matching m 
+		INNER JOIN game g ON m.matchingIdx = g.matchingIdx
+		WHERE g.userId = #{userId}
+		ORDER BY m.matchingIdx DESC
+		LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<select id="allGameDateListDesc" resultType="kr.co.cf.main.dto.JoinDTO">
+		SELECT 
+			m.matchingIdx,
+			(SELECT gu FROM location WHERE locationIdx = 
+				(SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu,
+			m.subject,
+			m.gameDate,
+			m.gamePlay
+		FROM matching m 
+		INNER JOIN game g ON m.matchingIdx = g.matchingIdx
+		WHERE AND g.userId = #{userId}
+		ORDER BY m.gameDate DESC
+		LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<select id="allGameDateListAsc" resultType="kr.co.cf.main.dto.JoinDTO">
+		SELECT 
+			m.matchingIdx,
+			(SELECT gu FROM location WHERE locationIdx = 
+				(SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu,
+			m.subject,
+			m.gameDate,
+			m.gamePlay
+		FROM matching m 
+		INNER JOIN game g ON m.matchingIdx = g.matchingIdx
+		WHERE g.userId = #{userId}
+		ORDER BY m.gameDate ASC	
+		LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<select id="allSearchGameList" resultType="kr.co.cf.main.dto.JoinDTO">
+		SELECT 
+			m.matchingIdx,
+			(SELECT gu FROM location WHERE locationIdx = 
+				(SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu,
+			m.subject,
+			m.gameDate,
+			m.gamePlay
+		FROM matching m
+		INNER JOIN game g ON m.matchingIdx = g.matchingIdx
+		WHERE g.userId = #{userId}
+			AND subject LIKE CONCAT(#{searchText})
+		ORDER BY m.matchingIdx DESC		
+		LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	
+	<!-- 회원 프로필 -->
+	
+	<select id="profileGames" resultType="kr.co.cf.main.dto.JoinDTO">
+		SELECT 
+			m.matchingIdx,
+			(SELECT gu FROM location WHERE locationIdx = 
+				(SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu,
+			m.subject,
+			m.gameDate,
+			m.gamePlay
+		FROM matching m 
+		INNER JOIN game g ON m.matchingIdx = g.matchingIdx
+		WHERE m.categoryId = 'm01'
+			AND m.matchigState = 'review'
+			AND g.userId = #{param1}
+			AND g.gameAppState = '확정'
+		ORDER BY m.gameDate DESC
+	</select>
+	
+	
+	<select id="profileInfo" resultType="kr.co.cf.main.dto.JoinDTO">
+		SELECT u.nickName, d.height, d.position, d.favTime, l.gu, u.userId, u.userIdx,
+		(select photoName from photo where photoId = u.userId) as photoName 
+		FROM user u JOIN userData d ON u.userId = d.userId JOIN location l ON d.locationIdx = l.locationIdx
+		WHERE u.userId = #{param1} AND u.userBlind = false;
+	</select>
+	
+	<insert id="mannerDefalut">
+		INSERT INTO review(receiveId, userMannerScore) values(#{param1},'50')
+	</insert>
+	
+	<insert id="photoDefalut">
+		insert into photo(categoryId, photoId, photoName) values('p02', #{param1}, '기본프로필.png') 
+	</insert>
+	
+	<select id="selectPhoto" resultType="String">
+		SELECT photoName from photo where photoId=#{param1}
+	</select>
+	
+	<insert id= "userReport" parameterType="hashmap">
+      INSERT INTO report(categoryId,userId,reportContent,reportState,reportId,reportUserId)
+      VALUES('ru',#{userId},#{reportContent},'미처리',#{reportId},#{reportUserId})
+   </insert>
+   
+   <select id="findPhotoName" resultType="String">
+   	select photoName from photo where photoId=#{param1}
+   </select>
+
+	
+</mapper>

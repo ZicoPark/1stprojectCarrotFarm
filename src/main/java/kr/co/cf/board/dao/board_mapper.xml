@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.cf.board.dao.BoardDAO">
+
+	<select id="flist" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			boardIdx, userId, subject, content, writeTime, bHit
+		FROM board WHERE categoryId = 'b001' ORDER BY boardIdx DESC 
+	</select>
+	
+	<select id="falist" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			boardIdx, userId, subject, writeTime, bHit
+		FROM board WHERE categoryId = 'b001' ORDER BY boardIdx DESC LIMIT #{param1} OFFSET #{param2}
+	</select>
+	
+	<select id="falistSearch" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			boardIdx, userId, subject, writeTime, bHit
+		FROM board WHERE categoryId = 'b001' 
+		AND (subject LIKE CONCAT('%' #{search} '%') OR 
+			userId 
+		LIKE CONCAT('%' #{search} '%'))
+	</select>	
+	
+	<select id="fatotalCount" resultType="int">
+		SELECT COUNT(boardIdx) FROM board WHERE categoryId='b001'
+	</select>
+	
+	<select id="fatotalCountSearch" resultType="int">
+		SELECT COUNT(boardIdx) FROM board
+			WHERE subject LIKE CONCAT('%' #{param1} '%') OR userId LIKE CONCAT('%' #{param1} '%') AND categoryId='b001'
+	</select>
+	
+	<insert 
+		useGeneratedKeys="true"
+		keyColumn="boardIdx"
+		keyProperty="boardIdx"
+		id="fwrite" parameterType="kr.co.cf.board.dto.BoardDTO">
+		INSERT INTO board(subject, userId, content, categoryId)
+			VALUES(#{subject}, #{userId}, #{content}, 'b001')
+	</insert>
+	
+	<insert id = "ffileWrite">
+		INSERT INTO photo(categoryId, photoId, photoName)
+			VALUES('p',#{param1}, #{param2}) 
+	</insert>
+	
+	<update id = "fupHit">
+		UPDATE board SET bHit = bHit+1 WHERE boardIdx = #{param1}
+	</update>
+	
+	<update id = "fdownHit">
+		UPDATE board SET bHit = bHit-1 WHERE boardIdx = #{param1}
+	</update>
+	
+	<select id = "fdetail" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			b.boardIdx, b.userId, b.subject, b.content, b.writeTime,
+			p.photoIdx, p.photoName, p.photoId
+		FROM board b left JOIN photo p ON (b.boardIdx = p.photoId)
+		WHERE b.boardIdx = #{boardIdx}
+	</select>
+	
+	<delete id="fdelete">
+		DELETE FROM board WHERE boardIdx = #{param1}
+	</delete>
+	
+	<select id="ffindFile" resultType="String">
+		SELECT photoName FROM photo WHERE photoIdx = #{param1}
+	</select>
+	
+	<update id="fupdate" parameterType="hashmap">
+		UPDATE board SET subject = #{subject}
+			,userId = #{userId}
+			,content = #{content}
+		WHERE boardIdx = #{bidx}
+	</update>
+	
+
+	
+	<select id="fcommentList" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			commentIdx,
+			userId,
+			commentWriteTime,
+			commentContent
+		FROM comment
+		WHERE categoryId='b001' AND comentId=#{param1}
+	</select>
+	
+	<insert id="fcommentWrite" parameterType="hashmap">
+		INSERT INTO comment(userId, categoryId,comentId,commentContent) VALUES(#{userId},#{categoryId},#{comentId},#{commentContent})
+	</insert>
+	
+	<delete id="fcommentDelete">
+		DELETE FROM comment WHERE commentIdx = #{param1};
+	</delete>
+	
+	<select id="fcommentGet" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			commentIdx,
+			userId,
+			commentWriteTime,
+			commentContent
+		FROM comment
+		WHERE commentIdx=#{param1}
+	</select>
+	
+	<update id="fcommentUpdate" parameterType="hashmap">
+		UPDATE comment SET commentContent=#{commentContent} WHERE commentIdx=#{commentIdx}
+	</update>
+	
+	<insert id="fboardReport" parameterType="hashmap">
+		INSERT INTO report(categoryId, userId, reportContent, reportState, reportId) VALUES ('rb',#{userId},#{reportContent},'미처리',#{boardIdx})
+	</insert>
+	
+	<insert id="fboardCommentReport" parameterType="hashmap">
+		INSERT INTO report(categoryId, userId, reportContent, reportState, reportId) VALUES ('rc',#{userId},#{reportContent},'미처리',#{commentIdx})
+	</insert>
+	
+	
+	
+	
+	
+	
+	
+	<select id="nlist" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			boardIdx, userId, subject, content, writeTime, bHit
+		FROM board WHERE categoryId = 'b002' ORDER BY boardIdx DESC 
+	</select>
+	
+	<select id="nalist" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			boardIdx, userId, subject, writeTime, bHit
+		FROM board WHERE categoryId = 'b002' ORDER BY boardIdx DESC LIMIT #{param1} OFFSET #{param2}
+	</select>
+	
+	<select id="nalistSearch" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			boardIdx, userId, subject, writeTime, bHit
+		FROM board WHERE categoryId = 'b002' 
+		AND (subject LIKE CONCAT('%' #{search} '%') OR 
+			userId 
+		LIKE CONCAT('%' #{search} '%'))
+	</select>	
+	
+	<select id="natotalCount" resultType="int">
+		SELECT COUNT(boardIdx) FROM board WHERE categoryId='b002'
+	</select>
+	
+	<select id="natotalCountSearch" resultType="int">
+		SELECT COUNT(boardIdx) FROM board
+			WHERE subject LIKE CONCAT('%' #{param1} '%') OR userId LIKE CONCAT('%' #{param1} '%') AND categoryId='b002'
+	</select>
+	
+	<insert 
+		useGeneratedKeys="true"
+		keyColumn="boardIdx"
+		keyProperty="boardIdx"
+		id="nwrite" parameterType="kr.co.cf.board.dto.BoardDTO">
+		INSERT INTO board(subject, userId, content, categoryId)
+			VALUES(#{subject}, #{userId}, #{content}, 'b002')
+	</insert>
+	
+	<insert id = "nfileWrite">
+		INSERT INTO photo(categoryId, photoId, photoName)
+			VALUES('p',#{param1}, #{param2}) 
+	</insert>
+	
+	<insert id = "nwritealarm" parameterType="hashmap">
+		INSERT INTO alarm(categoryId, alarmKind, userId, alarmcontent)
+			VALUES('b002',#{boardIdx}, #{param1}, '공지사항')
+	</insert>
+	
+	<insert id="sendAlarm" >
+		INSERT INTO alarm(categoryId,userId,alarmcontent,alarmKind) VALUES('b002',#{param1},'공지사항',#{param2})
+	</insert>
+	
+	<select id="userList" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT userId FROM user WHERE userBlind=0
+	</select>
+	
+	
+	<update id = "nupHit">
+		UPDATE board SET bHit = bHit+1 WHERE boardIdx = #{param1}
+	</update>
+	
+	<update id = "ndownHit">
+		UPDATE board SET bHit = bHit-1 WHERE boardIdx = #{param1}
+	</update>
+	
+	<select id = "ndetail" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			b.boardIdx, b.userId, b.subject, b.content, b.writeTime,
+			p.photoIdx, p.photoName, p.photoId
+		FROM board b left JOIN photo p ON (b.boardIdx = p.photoId)
+		WHERE b.boardIdx = #{boardIdx}
+	</select>
+	
+	<delete id="ndelete">
+		DELETE FROM board WHERE boardIdx = #{param1}
+	</delete>
+	
+	<select id="nfindFile" resultType="String">
+		SELECT photoName FROM photo WHERE photoIdx = #{param1}
+	</select>
+	
+	<update id="nupdate" parameterType="hashmap">
+		UPDATE board SET subject = #{subject}
+			,userId = #{userId}
+			,content = #{content}
+		WHERE boardIdx = #{bidx}
+	</update>
+	
+	<select id="nuserRight" resultType="String">
+		SELECT userRight FROM user WHERE userId = #{param1}
+	</select>
+	
+	
+	
+	
+	
+	
+	<select id="ilist" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			boardIdx, userId, subject, content, writeTime, bHit
+		FROM board WHERE categoryId = 'b003' ORDER BY boardIdx DESC 
+	</select>
+	
+	<select id="ialist" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			boardIdx, userId, subject, writeTime, bHit
+		FROM board WHERE categoryId = 'b003' ORDER BY boardIdx DESC LIMIT #{param1} OFFSET #{param2}
+	</select>
+	
+	<select id="ialistSearch" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			boardIdx, userId, subject, writeTime, bHit
+		FROM board WHERE categoryId = 'b003' 
+		AND (subject LIKE CONCAT('%' #{search} '%') OR 
+			userId 
+		LIKE CONCAT('%' #{search} '%'))
+	</select>	
+	
+	<select id="iatotalCount" resultType="int">
+		SELECT COUNT(boardIdx) FROM board WHERE categoryId='b003'
+	</select>
+	
+	<select id="iatotalCountSearch" resultType="int">
+		SELECT COUNT(boardIdx) FROM board
+			WHERE subject LIKE CONCAT('%' #{param1} '%') OR userId LIKE CONCAT('%' #{param1} '%') AND categoryId='b003'
+	</select>
+	
+	<insert 
+		useGeneratedKeys="true"
+		keyColumn="boardIdx"
+		keyProperty="boardIdx"
+		id="iwrite" parameterType="kr.co.cf.board.dto.BoardDTO">
+		INSERT INTO board(subject, userId, content, categoryId)
+			VALUES(#{subject}, #{userId}, #{content}, 'b003')
+	</insert>
+	
+	<insert id = "ifileWrite">
+		INSERT INTO photo(categoryId, photoId, photoName)
+			VALUES('p',#{param1}, #{param2}) 
+	</insert>
+	
+	<insert id = "iinquirytableSave">
+		INSERT INTO inquiry(inquiryIdx, inquiryState)
+			VALUES(#{param1}, '미처리') 
+	</insert>
+	
+	<update id = "iupHit">
+		UPDATE board SET bHit = bHit+1 WHERE boardIdx = #{param1}
+	</update>
+	
+	<update id = "idownHit">
+		UPDATE board SET bHit = bHit-1 WHERE boardIdx = #{param1}
+	</update>
+	
+	<select id = "idetail" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			b.boardIdx, b.userId, b.subject, b.content, b.writeTime,
+			p.photoIdx, p.photoName, p.photoId
+		FROM board b left JOIN photo p ON (b.boardIdx = p.photoId)
+		WHERE b.boardIdx = #{boardIdx}
+	</select>
+	
+	<delete id="idelete">
+		DELETE FROM board WHERE boardIdx = #{param1}
+	</delete>
+	
+	<insert id = "iinquirytabledelete">
+		DELETE FROM inquiry WHERE inquiryIdx = #{param1}
+	</insert>
+	
+	<select id="ifindFile" resultType="String">
+		SELECT photoName FROM photo WHERE photoIdx = #{param1}
+	</select>
+	
+	<update id="iupdate" parameterType="hashmap">
+		UPDATE board SET subject = #{subject}
+			,userId = #{userId}
+			,content = #{content}
+		WHERE boardIdx = #{bidx}
+	</update>
+	
+	
+	<select id="icommentList" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			commentIdx,
+			userId,
+			commentWriteTime,
+			commentContent
+		FROM comment
+		WHERE categoryId='b003' AND comentId=#{param1}
+	</select>
+	
+	<insert id="icommentWrite" parameterType="hashmap">
+		INSERT INTO comment(userId, categoryId,comentId,commentContent) VALUES(#{userId},#{categoryId},#{comentId},#{commentContent})
+	</insert>
+	
+	<delete id="icommentDelete">
+		DELETE FROM comment WHERE commentIdx = #{param1};
+	</delete>
+	
+	<select id="icommentGet" resultType="kr.co.cf.board.dto.BoardDTO">
+		SELECT
+			commentIdx,
+			userId,
+			commentWriteTime,
+			commentContent
+		FROM comment
+		WHERE commentIdx=#{param1}
+	</select>
+	
+	<update id="icommentUpdate" parameterType="hashmap">
+		UPDATE comment SET commentContent=#{commentContent} WHERE commentIdx=#{commentIdx}
+	</update>
+	
+	<select id="iuserRight" resultType="String">
+		SELECT userRight FROM user WHERE userId = #{param1}
+	</select>
+	
+</mapper>

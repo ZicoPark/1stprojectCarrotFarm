@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.cf.admin.dao.AdminTeamDAO">
+	
+	<select id="adminTeamList" resultType="kr.co.cf.admin.dto.AdminTeamDTO">
+		SELECT t.teamIdx ,t.teamDisband ,t.teamName ,t.teamOpenDate ,p.photoName 
+		FROM team t
+		LEFT JOIN photo p ON t.teamIdx  = p.photoId AND p.categoryId = 'p03'
+		ORDER BY t.teamidx ASC
+ 		limit 10 offSet #{param1}
+	</select>
+	
+	<select id="adminTeamListCnt" resultType="int">
+		SELECT COUNT(teamIdx) FROM team
+	</select>
+	
+	<select id="teamStateCategoryCnt" resultType="int">
+		SELECT COUNT(teamIdx) FROM team
+		WHERE teamDisband =#{param1}
+	</select>
+	
+	<select id="teamStateCategoryList" resultType="kr.co.cf.admin.dto.AdminTeamDTO">
+		SELECT t.teamIdx ,t.teamDisband ,t.teamName ,t.teamOpenDate ,p.photoName 
+		FROM team t
+		LEFT JOIN photo p ON t.teamIdx  = p.photoId AND p.categoryId = 'p03'
+		WHERE teamDisband =#{param1}
+		ORDER BY t.teamidx ASC
+ 		limit 10 offSet #{param2}
+	</select>
+	
+	<select id="teamSearchTextCnt" resultType="int">
+		SELECT COUNT(teamIdx) FROM team
+		WHERE teamName like concat('%', #{param1}, '%')
+	</select>
+	
+	<select id="teamSearchTextList" resultType="kr.co.cf.admin.dto.AdminTeamDTO">
+		SELECT t.teamIdx ,t.teamDisband ,t.teamName ,t.teamOpenDate ,p.photoName 
+		FROM team t
+		LEFT JOIN photo p ON t.teamIdx  = p.photoId AND p.categoryId = 'p03'
+		WHERE teamName like concat('%', #{param1}, '%')
+		ORDER BY t.teamidx ASC
+ 		limit 10 offSet #{param2}
+	</select>
+	
+	<update id="adminTeamNameChange">
+		UPDATE team SET teamName =#{param1} WHERE teamIdx=#{param2}
+	</update>
+	
+	<select id="selectTeamProfile" resultType="String">  
+		SELECT photoName FROM photo
+		WHERE categoryId='p03' AND photoId=#{param1}
+	</select>
+	
+	<insert id="teamProfileRegist">
+		INSERT INTO photo(categoryId,photoId,photoName)
+		VALUES('p03',#{param1},#{param2})
+	</insert>
+	
+	<update id="teamProfileUpdate">
+		UPDATE photo SET photoName=#{param2}
+		WHERE photoId=#{param1} AND categoryId='p03'
+	</update>
+</mapper>

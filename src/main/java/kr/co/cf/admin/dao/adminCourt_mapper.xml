@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.cf.admin.dao.AdminCourtDAO">
+	<!-- 어드민 코트 페이지 코트리스트 불러오기 -->
+	<select id="courtList" resultType="kr.co.cf.admin.dto.AdminCourtDTO">
+		SELECT courtIdx, courtName, courtInOut, courtAddress, courtState FROM court
+	</select>
+	
+	<select id="courtListPage" resultType="kr.co.cf.admin.dto.AdminCourtDTO">
+		SELECT courtIdx, courtName, courtInOut, courtAddress, courtState,courtDelete FROM court
+		limit 10 offset #{param1}
+	</select>
+	
+	<select id="courtListCnt" resultType="int">
+		SELECT count(courtIdx) from court
+	</select>
+	
+	<select id="courtListSearchPage" resultType="kr.co.cf.admin.dto.AdminCourtDTO">
+		SELECT courtIdx, courtName, courtInOut, courtAddress, courtState,courtDelete FROM court
+		WHERE courtName like concat('%', #{param2}, '%')
+		limit 10 offset #{param1}
+	</select>
+	
+	<select id="courtListSearchCnt" parameterType="hashmap" resultType="int">
+		SELECT count(courtIdx) from court
+		WHERE courtName like concat('%', #{courtSearch}, '%')
+
+	</select>
+	
+	<select id="courtInfo" resultType="kr.co.cf.admin.dto.AdminCourtDTO">
+		SELECT * FROM court
+		WHERE courtIdx = #{param1}
+	</select>
+	
+	<select id="selectGu" resultType="kr.co.cf.admin.dto.AdminCourtDTO">
+		select gu from location
+	</select>
+	<update id="courtUpdate" parameterType="hashmap">
+		update court set locationIdx=#{gu},courtName=#{courtName},courtInOut=#{courtInOut},
+		courtState=#{courtState},courtLatitude=#{courtLatitude},courtLongitude=#{courtLongitude},courtAddress=#{courtAddress}
+		where courtIdx = #{courtIdx}
+	</update>
+	
+	<update id="courtDelete">
+		update court set courtDelete=2 where courtIdx=#{param1}
+	</update>
+	
+	<select id="courtTipOffList" resultType="kr.co.cf.admin.dto.AdminCourtDTO">
+		SELECT courtTipOffIdx,userId,courtName,courtAddress FROM courtTipOff
+		limit 10 offset #{param1}
+	</select>
+	
+	<select id="courtTipOffCnt" resultType="int">
+		SELECT count(courtTipOffIdx) from courtTipOff
+	</select>
+	
+	<select id="courtTipOffInfo" resultType="kr.co.cf.admin.dto.AdminCourtDTO">
+		SELECT courtName,courtAddress FROM courtTipOff
+		Where courtTipOffIdx=#{param1}
+	</select>
+	
+	<insert id="adminCourtRegist" parameterType="hashmap">
+      INSERT INTO court(locationIdx,courtName,courtInOut,courtState,courtLatitude,courtLongitude,courtAddress,courtDelete)
+      values(#{gu},#{courtName},#{courtInOut},#{courtState},#{courtLatitude},#{courtLongitude},#{courtAddress},1);
+   </insert>
+   
+   <delete id="courtTipOffDelete">
+   		DELETE FROM courtTipOff where courtTipOffIdx=#{param1}
+   </delete>
+   
+   <update id="courtReRegist">
+   		UPDATE court SET courtDelete=1 WHERE courtIdx=#{param1}
+   </update>
+</mapper>

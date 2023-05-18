@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.cf.court.dao.CourtDAO">
+	<select id="searchCourt" resultType="kr.co.cf.court.dto.CourtDTO">
+		select * from court where courtLatitude =#{param1} and #{param2}
+	</select>
+	
+	<insert id="addCourt" >
+		insert into court(locationIdx,courtName,courtTel,courtInOut,courtState,courtLatitude,courtLongitude,courtAddress)
+				values('1',#{param1},'','out','사용가능',#{param2},#{param3},#{param4})
+	</insert>
+	
+	<select id="list" resultType="kr.co.cf.court.dto.CourtDTO">
+		SELECT c.courtIdx, c.courtName,c.courtAddress, c.courtInOut, c.courtState, c.courtLatitude, c.courtLongitude, l.gu, AVG(cr.courtStar) AS courtStar
+			FROM court c
+			JOIN location l ON c.locationIdx = l.locationIdx
+			LEFT JOIN courtReview cr ON c.courtIdx = cr.courtIdx
+			where c.courtDelete = 1
+			GROUP BY c.courtIdx
+			order by courtStar desc
+	</select>
+	<select id="location" resultType="kr.co.cf.court.dto.CourtDTO">
+		select courtLatitude,courtLongitude from court
+		where courtDelete = 1
+	</select>
+	
+	<select id="courtNameSearch" resultType="kr.co.cf.court.dto.CourtDTO">
+		select courtName,courtLatitude,courtLongitude,courtIdx from court where courtName like '%'+#{param1}+'%' and courtDelete=1
+	</select>
+	
+	<select  id="courtDetail" resultType="kr.co.cf.court.dto.CourtDTO">
+		select  c.courtIdx,c.courtName,c.courtInOut,c.courtState,c.courtAddress, avg(cr.courtStar) as courtStar ,c.courtLatitude,c.courtLongitude 
+		from court c
+		left join courtreview cr on c.courtIdx =cr.courtIdx 
+		where c.courtIdx=#{param1};
+	</select>
+	
+	<insert 
+		useGeneratedKeys="true"
+		keyColumn="courtReviewIdx"
+		keyProperty="courtReviewIdx"
+		id="courtReviewWrite" parameterType="hashmap">
+		insert into courtReview(courtIdx,userId,courtName,courtOneLineReview,courtStar)
+			values(#{courtIdx},#{userId},#{courtName},#{courtOneLineReview},#{courtStar})
+	</insert>
+	
+	<insert id="fileWrite">
+		insert into photo(categoryId,photoId,photoName)
+			values('p01',#{param1},#{param2})
+	</insert>
+	
+	<select id="courtReviewList" resultType="kr.co.cf.court.dto.CourtDTO">
+		SELECT cr.userId, cr.courtOneLineReview, cr.courtStar, cr.courtReviewIdx, p.photoName
+		FROM courtReview cr 
+		LEFT JOIN photo p ON cr.courtReviewIdx = p.photoId AND p.categoryId = 'p01'
+		WHERE cr.courtIdx = #{parma1}
+		ORDER BY cr.courtReviewDate DESC
+	</select>
+	
+	<select id="reviewWriter" resultType="String" parameterType="hashmap">
+		select userId from courtReview where courtIdx=#{courtIdx} and userId=#{userId}
+	</select>
+	
+	<select id="reviewPhotoList" resultType="kr.co.cf.court.dto.CourtDTO">
+		select photoName from photo 
+		where photoId in (select courtReviewIdx from courtreview where courtIdx=#{param1})
+		AND categoryId='p01'
+	</select>
+	
+	<select id="findFile" resultType="String" parameterType="hashmap">
+		select photoName from photo where photoId=#{courtReviewIdx} AND categoryId='p01'
+	</select>
+	
+	<delete id="courtPhotoDelete" parameterType="hashmap">
+		delete from photo where photoId=#{courtReviewIdx} AND categoryId='p01'
+	</delete>
+	
+	<delete id="courtReviewDelete" parameterType="hashmap">
+		delete from courtReview where courtReviewIdx=#{courtReviewIdx}
+	</delete>
+	
+	<select id="guList" resultType="kr.co.cf.court.dto.CourtDTO">
+		select gu from location;
+	</select>
+	
+	
+	<!-- 블라인드 추가 -->
+	<select id="courtSearch" resultType="kr.co.cf.court.dto.CourtDTO">
+		SELECT c.courtIdx, c.courtName,c.courtAddress, c.courtInOut, c.courtState, c.courtLatitude, c.courtLongitude, l.gu, AVG(cr.courtStar) AS courtStar
+			FROM court c
+			JOIN location l ON c.locationIdx = l.locationIdx
+			LEFT JOIN courtReview cr ON c.courtIdx = cr.courtIdx
+			where c.courtName like concat('%', #{param1}, '%') and c.courtDelete=1
+			GROUP BY c.courtIdx
+			order by courtStar desc
+			limit 10 OFFSET #{param2}
+	</select>
+	<!-- 블라인드 추가 -->
+	<select id="courtList" resultType="kr.co.cf.court.dto.CourtDTO">
+		SELECT c.courtIdx, c.courtName,c.courtAddress, c.courtInOut, c.courtState, c.courtLatitude, c.courtLongitude, l.gu, AVG(cr.courtStar) AS courtStar
+			FROM court c
+			JOIN location l ON c.locationIdx = l.locationIdx
+			LEFT JOIN courtReview cr ON c.courtIdx = cr.courtIdx
+			where l.gu like concat('%', #{param1}, '%') and c.courtInOut like concat('%', #{param2}, '%') and c.courtDelete= 1
+			GROUP BY c.courtIdx
+			order by courtStar desc
+			limit 10 OFFSET #{param3}
+	</select>
+	<!-- 블라인드 추가 -->
+	<select id="paging" resultType="kr.co.cf.court.dto.CourtDTO">
+		SELECT c.courtIdx, c.courtName,c.courtAddress, c.courtInOut, c.courtState, c.courtLatitude, c.courtLongitude, l.gu, AVG(cr.courtStar) AS courtStar
+			FROM court c
+			JOIN location l ON c.locationIdx = l.locationIdx
+			LEFT JOIN courtReview cr ON c.courtIdx = cr.courtIdx
+			where c.courtDelete=1
+			GROUP BY c.courtIdx
+			order by courtStar desc
+			limit #{param1} OFFSET #{param2}
+	</select>
+	<!-- 블라인드 추가 -->
+	<select id="sortTotalList" resultType="int">
+		SELECT count(c.courtIdx)
+			FROM court c
+			JOIN location l ON c.locationIdx = l.locationIdx
+			LEFT JOIN courtReview cr ON c.courtIdx = cr.courtIdx
+			where l.gu like concat('%', #{param1}, '%') and c.courtInOut like concat('%', #{param2}, '%') and c.courtDelete=1
+	</select>
+	
+	<!-- 블라인드 추가 -->
+	<select id="searchTotalList" resultType="int">
+		SELECT count(c.courtIdx)
+			FROM court c
+			JOIN location l ON c.locationIdx = l.locationIdx
+			LEFT JOIN courtReview cr ON c.courtIdx = cr.courtIdx
+			where c.courtName like concat('%', #{param1}, '%') and c.courtDelete=1
+	</select>
+	
+	<select id="userCourtReview" resultType="kr.co.cf.court.dto.CourtDTO">
+		select userId,courtOneLineReview,courtStar,courtIdx,courtReviewIdx from courtReview where courtReviewIdx=#{param1}
+	</select>
+	
+	<select id="userCourtReviewPhoto" resultType="kr.co.cf.court.dto.CourtDTO">
+		select photoName  from photo where photoId=#{param1} AND categoryId='p01'
+	</select>
+	
+	<update id="reviewUpdate" parameterType="hashmap">
+		update courtreview set courtOneLineReview=#{courtOneLineReview},courtStar=#{courtStar}
+			where courtReviewIdx =#{courtReviewIdx}
+	</update>
+	
+	<select id="findReviewPhoto" resultType="String">
+		select photoName from photo where photoId=#{param1} AND categoryId='p01'
+	</select>
+	
+	<update id="fileChange">
+		update photo set photoName=#{param2} where photoId=#{param1} AND categoryId='p01'
+	</update>
+	
+	<insert id="courtTipOff" parameterType="hashmap">
+		insert into courtTipOff(userId,courtName,courtAddress)
+			values(#{userId},#{courtName},#{courtAddress})
+	</insert>
+	
+	<insert id="courtReviewReport" parameterType="hashmap">
+		INSERT INTO report(categoryId,userId,reportContent,reportState,reportId,reportUserId)
+		VALUES('rr',#{userId},#{reportContent},'미처리',#{courtReviewIdx},#{reportUserId});
+	</insert>
+</mapper>

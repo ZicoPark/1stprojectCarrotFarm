@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.cf.main.dao.MainDAO">
+	
+	<select id="matchingList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+			matchingIdx,
+			(SELECT gu FROM location WHERE locationIdx = (SELECT locationIdx FROM court WHERE courtIdx = m.courtIdx)) AS gu, 
+			(SELECT COUNT(userID) FROM game WHERE gameAppState='확정' AND matchingIdx = m.matchingIdx) AS matchingNumforSure,
+			matchingNum,
+			subject,
+			gameDate
+		FROM matching m
+		WHERE categoryId='m01' AND matchigState='matching'
+		ORDER BY matchingIdx DESC
+		LIMIT 5
+			 
+	</select>
+	
+	<select id="teamList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+			t.teamIdx,
+			(SELECT gu FROM location WHERE locationIdx = t.locationIdx) AS gu, 
+			t.teamMatchState,
+			t.teamName
+		FROM team t
+		ORDER BY teamIdx DESC
+		LIMIT 5
+			 
+	</select>
+	
+	<select id="noticeList" resultType="kr.co.cf.matching.dto.MatchingDTO">
+		SELECT 
+			boardIdx,
+			subject,
+			writeTime
+		FROM board
+		WHERE categoryId = 'b002'
+		ORDER BY boardIdx DESC
+		LIMIT 5
+			 
+	</select>
+</mapper>

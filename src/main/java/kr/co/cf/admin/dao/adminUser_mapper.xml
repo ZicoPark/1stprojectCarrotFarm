@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.cf.admin.dao.AdminUserDAO">
+
+	<select id="userCnt" resultType="int">
+		SELECT count(userIdx) from user
+	</select>
+	<select id="userList" resultType="kr.co.cf.admin.dto.AdminUserDTO">
+		select u.userIdx,u.userId,u.nickname,u.userName,u.userJoinDate,u.email,u.userIdx,p.photoName, p.photoId,u.userState 
+		from user u 
+		left join photo p
+ 		on u.userId =p.photoId
+ 		limit 10 offSet #{param1}
+	</select>
+	
+	<select id="stateCategoryCnt" resultType="int">
+		SELECT count(userIdx) from user
+		where userState = #{param1}
+	</select>
+	
+	<select id="stateCategoryList" resultType="kr.co.cf.admin.dto.AdminUserDTO">
+		select u.userIdx,u.userId,u.nickname,u.userName,u.userJoinDate,u.email,u.userIdx,p.photoName, p.photoId,u.userState 
+		from user u 
+		left join photo p
+ 		on u.userId =p.photoId
+ 		where userState=#{param2}
+ 		limit 10 offSet #{param1}
+	</select>
+	
+	<select id="searchTextCnt" resultType="int">
+		SELECT count(userIdx) FROM user
+		WHERE userId like concat('%', #{param1}, '%') 
+		OR nickName like concat('%', #{param1}, '%') 
+		OR email like concat('%', #{param1}, '%')
+	</select>
+	
+	<select id="searchText" resultType="kr.co.cf.admin.dto.AdminUserDTO">
+		select u.userIdx,u.userId,u.nickname,u.userName,u.userJoinDate,u.email,u.userIdx,p.photoName, p.photoId,u.userState 
+		from user u 
+		left join photo p
+ 		on u.userId =p.photoId
+ 		WHERE userId like concat('%', #{param1}, '%') 
+		OR nickName like concat('%', #{param1}, '%') 
+		OR email like concat('%', #{param1}, '%')
+ 		limit 10 offSet #{param2}
+	</select>
+	
+	<select id="searchCategoryCnt" resultType="int">
+		SELECT count(userIdx) FROM user
+		WHERE ${param2} like concat('%', #{param1}, '%')
+	</select>
+	
+	<select id="searchCategory" resultType="kr.co.cf.admin.dto.AdminUserDTO">
+		select u.userIdx,u.userId,u.nickname,u.userName,u.userJoinDate,u.email,u.userIdx,p.photoName, p.photoId,u.userState 
+		from user u 
+		left join photo p
+ 		on u.userId =p.photoId
+ 		WHERE ${param1} like concat('%', #{param2}, '%') 
+ 		limit 10 offSet #{param3}
+	</select>
+	
+	<update id="nickNameChange">
+		UPDATE user SET nickname=#{param1} where userId=#{param2}
+	</update>
+	
+	<select id="selectProfile" resultType="String">
+		SELECT photoName FROM photo WHERE photoId=#{param1}
+	</select>
+	
+	<insert id="profileRegist">
+		INSERT INTO photo(categoryId,photoName,photoId)
+		VALUES('p02',#{param2},#{param1})
+	</insert>
+	
+	<update id="profileChange">
+		UPDATE photo SET photoName=#{param1} where photoId=#{param2}
+	</update>
+</mapper>

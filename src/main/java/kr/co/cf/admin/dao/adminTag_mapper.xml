@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.cf.admin.dao.AdminTagDAO">
+
+	<select id="tagListCnt" resultType="int">
+		SELECT COUNT(tagIdx) FROM tag
+	</select>
+	
+	<select id="tagList" resultType="kr.co.cf.admin.dto.AdminTagDTO">
+		SELECT tagIdx,tagContent FROM tag
+		LIMIT 10 OFFSET #{parma1}
+	</select>
+	
+	<select id="tagSearchListCnt" resultType="int">
+		SELECT COUNT(tagIdx) FROM tag
+		WHERE tagContent LIKE concat('%', #{param1}, '%')
+	</select>
+	
+	<select id="tagSearchList" resultType="kr.co.cf.admin.dto.AdminTagDTO" >
+		SELECT tagIdx,tagContent FROM tag
+		WHERE tagContent LIKE concat('%', #{param1}, '%')
+		LIMIT 10 OFFSET #{param2}
+	</select>
+	
+	<select id="tagInfo" resultType="kr.co.cf.admin.dto.AdminTagDTO">
+		SELECT tagContent,tagIdx FROM tag
+		WHERE tagIdx=#{param1}
+	</select>
+	
+	<update id="tagUpdate">
+		UPDATE tag SET tagContent=#{param1} WHERE tagIdx=#{param2}
+	</update>
+	
+	<select id="tagContentChk" resultType="int">
+		SELECT COUNT(tagIdx) FROM tag
+		WHERE tagContent LIKE concat(#{param1})
+	</select>
+	
+	<select id="tagIdChk" resultType="int">
+		SELECT COUNT(tagIdx) FROM tag
+		WHERE tagId LIKE concat(#{param1})
+	</select>
+	
+	<insert id="tagRegist" parameterType="hashmap">
+		INSERT INTO tag(tagContent)
+		VALUES(#{tagContent})
+	</insert>
+</mapper>
